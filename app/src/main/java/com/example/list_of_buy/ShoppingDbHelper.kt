@@ -6,7 +6,8 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 
-class ShoppingDbHelper(context: Context) : SQLiteOpenHelper(context,DATABASE_NAME, null,DATABASE_VERSION, ) {
+class ShoppingDbHelper(context: Context) :
+    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
         const val DATABASE_NAME = "shopping.db"
@@ -28,7 +29,7 @@ class ShoppingDbHelper(context: Context) : SQLiteOpenHelper(context,DATABASE_NAM
     }
 }
 
-fun addItem(dbHelper: ShoppingDbHelper, itemName: String, quantity: Int) : Long {
+fun addItem(dbHelper: ShoppingDbHelper, itemName: String, quantity: Int): Long {
     val db = dbHelper.writableDatabase
 
     val values = ContentValues().apply {
@@ -41,21 +42,27 @@ fun addItem(dbHelper: ShoppingDbHelper, itemName: String, quantity: Int) : Long 
     return id
 }
 
-fun getAllItems(dbHelper: ShoppingDbHelper) : List<ShoppingItem> {
+fun getAllItems(dbHelper: ShoppingDbHelper): List<ShoppingItem> {
     val db = dbHelper.readableDatabase
-    val projection = arrayOf(BaseColumns._ID, ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME)
+    val projection = arrayOf(
+        BaseColumns._ID, ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME,
+        ShoppingContract.ShoppingEntry.COLUMN_QUANTITY
+    )
 
     val cursor = db.query(
         ShoppingContract.ShoppingEntry.TABLE_NAME,
-        null,null,null,null,null,null
+        projection,
+        null, null, null, null, null
     )
     val items = mutableListOf<ShoppingItem>()
     with(cursor) {
         while (moveToNext()) {
             val id = getLong(getColumnIndexOrThrow(BaseColumns._ID))
-            val itemName = getString(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME))
-            val quantity = getInt(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY))
-            items.add(ShoppingItem(id,itemName,quantity))
+            val itemName =
+                getString(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME))
+            val quantity =
+                getInt(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY))
+            items.add(ShoppingItem(id, itemName, quantity))
         }
     }
     cursor.close()
@@ -63,7 +70,7 @@ fun getAllItems(dbHelper: ShoppingDbHelper) : List<ShoppingItem> {
     return items
 }
 
-fun updateItem(dbHelper: ShoppingDbHelper, id:Long, itemName: String, quantity: Int) {
+fun updateItem(dbHelper: ShoppingDbHelper, id: Long, itemName: String, quantity: Int) {
     val db = dbHelper.writableDatabase
 
     val values = ContentValues().apply {
@@ -71,13 +78,22 @@ fun updateItem(dbHelper: ShoppingDbHelper, id:Long, itemName: String, quantity: 
         put(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY, quantity)
     }
 
-    db.update(ShoppingContract.ShoppingEntry.TABLE_NAME, values, "${BaseColumns._ID} = ?", arrayOf(id.toString()) )
+    db.update(
+        ShoppingContract.ShoppingEntry.TABLE_NAME,
+        values,
+        "${BaseColumns._ID} = ?",
+        arrayOf(id.toString())
+    )
     db.close()
 }
 
 fun deleteItem(dbHelper: ShoppingDbHelper, id: Long) {
     val db = dbHelper.writableDatabase
-    db.delete(ShoppingContract.ShoppingEntry.TABLE_NAME,"${BaseColumns._ID} = ? ", arrayOf(id.toString()))
+    db.delete(
+        ShoppingContract.ShoppingEntry.TABLE_NAME,
+        "${BaseColumns._ID} = ?",
+        arrayOf(id.toString())
+    )
     db.close()
 }
 
