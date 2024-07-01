@@ -17,7 +17,7 @@ class ShoppingDbHelper(context: Context) :
     override fun onCreate(db: SQLiteDatabase?) {
         val SQL_CREATE_ENTRIES =
             "CREATE TABLE ${ShoppingContract.ShoppingEntry.TABLE_NAME} (" +
-                    "${BaseColumns._ID} INTERGER PRIMARY KEY," +
+                    "${BaseColumns._ID} INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "${ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME} TEXT," +
                     "${ShoppingContract.ShoppingEntry.COLUMN_QUANTITY} INTEGER)"
         db?.execSQL(SQL_CREATE_ENTRIES)
@@ -27,73 +27,75 @@ class ShoppingDbHelper(context: Context) :
         db?.execSQL("DROP TABLE IF EXISTS ${ShoppingContract.ShoppingEntry.TABLE_NAME}")
         onCreate(db)
     }
-}
 
-fun addItem(dbHelper: ShoppingDbHelper, itemName: String, quantity: Int): Long {
-    val db = dbHelper.writableDatabase
+    fun addItem(dbHelper: ShoppingDbHelper, itemName: String, quantity: Int): Long {
+        val db = dbHelper.writableDatabase
 
-    val values = ContentValues().apply {
-        put(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME, itemName)
-        put(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME, quantity)
-    }
-
-    val id = db.insert(ShoppingContract.ShoppingEntry.TABLE_NAME, null, values)
-    db.close()
-    return id
-}
-
-fun getAllItems(dbHelper: ShoppingDbHelper): List<ShoppingItem> {
-    val db = dbHelper.readableDatabase
-    val projection = arrayOf(
-        BaseColumns._ID, ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME,
-        ShoppingContract.ShoppingEntry.COLUMN_QUANTITY
-    )
-
-    val cursor = db.query(
-        ShoppingContract.ShoppingEntry.TABLE_NAME,
-        projection,
-        null, null, null, null, null
-    )
-    val items = mutableListOf<ShoppingItem>()
-    with(cursor) {
-        while (moveToNext()) {
-            val id = getLong(getColumnIndexOrThrow(BaseColumns._ID))
-            val itemName =
-                getString(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME))
-            val quantity =
-                getInt(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY))
-            items.add(ShoppingItem(id, itemName, quantity))
+        val values = ContentValues().apply {
+            put(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME, itemName)
+            put(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY, quantity)
         }
-    }
-    cursor.close()
-    db.close()
-    return items
-}
 
-fun updateItem(dbHelper: ShoppingDbHelper, id: Long, itemName: String, quantity: Int) {
-    val db = dbHelper.writableDatabase
-
-    val values = ContentValues().apply {
-        put(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME, itemName)
-        put(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY, quantity)
+        val id = db.insert(ShoppingContract.ShoppingEntry.TABLE_NAME, null, values)
+        db.close()
+        return id
     }
 
-    db.update(
-        ShoppingContract.ShoppingEntry.TABLE_NAME,
-        values,
-        "${BaseColumns._ID} = ?",
-        arrayOf(id.toString())
-    )
-    db.close()
+    fun getAllItems(dbHelper: ShoppingDbHelper): List<ShoppingItem> {
+        val db = dbHelper.readableDatabase
+        val projection = arrayOf(
+            BaseColumns._ID, ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME,
+            ShoppingContract.ShoppingEntry.COLUMN_QUANTITY
+        )
+
+        val cursor = db.query(
+            ShoppingContract.ShoppingEntry.TABLE_NAME,
+            projection,
+            null, null, null, null, null
+        )
+        val items = mutableListOf<ShoppingItem>()
+        with(cursor) {
+            while (moveToNext()) {
+                val id = getInt(getColumnIndexOrThrow(BaseColumns._ID))
+                val itemName =
+                    getString(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME))
+                val quantity =
+                    getInt(getColumnIndexOrThrow(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY))
+                items.add(ShoppingItem(id, itemName, quantity))
+            }
+        }
+        cursor.close()
+        db.close()
+        return items
+    }
+
+    fun updateItem(dbHelper: ShoppingDbHelper, id: Int, itemName: String, quantity: Int) {
+        val db = dbHelper.writableDatabase
+
+        val values = ContentValues().apply {
+            put(ShoppingContract.ShoppingEntry.COLUMN_ITEM_NAME, itemName)
+            put(ShoppingContract.ShoppingEntry.COLUMN_QUANTITY, quantity)
+        }
+
+        db.update(
+            ShoppingContract.ShoppingEntry.TABLE_NAME,
+            values,
+            "${BaseColumns._ID} = ?",
+            arrayOf(id.toString())
+        )
+        db.close()
+    }
+
+    fun deleteItem(dbHelper: ShoppingDbHelper, id: Int) {
+        val db = dbHelper.writableDatabase
+        db.delete(
+            ShoppingContract.ShoppingEntry.TABLE_NAME,
+            "${BaseColumns._ID} = ?",
+            arrayOf(id.toString())
+        )
+        db.close()
+    }
+
 }
 
-fun deleteItem(dbHelper: ShoppingDbHelper, id: Long) {
-    val db = dbHelper.writableDatabase
-    db.delete(
-        ShoppingContract.ShoppingEntry.TABLE_NAME,
-        "${BaseColumns._ID} = ?",
-        arrayOf(id.toString())
-    )
-    db.close()
-}
 

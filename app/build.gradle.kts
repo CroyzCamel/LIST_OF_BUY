@@ -67,8 +67,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    //Lifecycle
-    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+
 
 
 }
