@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,16 +57,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShoppingApp(dbHelper: ShoppingDbHelper) {
-    var items by remember { mutableStateOf(getAllItems(dbHelper)) }
-    var newItemName by remember { mutableStateOf("") }
-    var newQuantity by remember { mutableStateOf("") }
+    var items by remember { mutableStateOf(emptyList<ShoppingItem>()) }
+    var newItemName by rememberSaveable { mutableStateOf("") }
+    var newQuantity by rememberSaveable { mutableStateOf("") }
 
-    items = getAllItems(dbHelper)
+    items = dbHelper.getAllItems(dbHelper)
 
     Scaffold { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
             TextField(
-                value = newItemName, onValueChange = { newItemName = it },
+                value = newItemName,
+                onValueChange = { newItemName = it },
                 label = { Text(text = "Item Name") },
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth()
@@ -73,24 +75,15 @@ fun ShoppingApp(dbHelper: ShoppingDbHelper) {
             TextField(
                 value = newQuantity, onValueChange = { newQuantity = it },
                 label = { Text(text = "Quantity") },
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    addItem(dbHelper, newItemName, newQuantity.toInt())
-                    items = getAllItems(dbHelper)
-                    newItemName = ""
-                    newQuantity = ""
-                }),
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    if (newItemName.isNotBlank() && newQuantity.isNotBlank()) {
-                        addItem(dbHelper, newItemName, newQuantity.toInt())
-                        items = getAllItems(dbHelper)
-                        newItemName = ""
-                        newQuantity = ""
-                    }
+                    dbHelper.addItem(dbHelper, newItemName, newQuantity.toInt())
+                    items = dbHelper.getAllItems(dbHelper)
+                    newItemName = ""
+                    newQuantity = ""
                 },
                 modifier = Modifier.align(Alignment.End)
             ) {
@@ -98,11 +91,11 @@ fun ShoppingApp(dbHelper: ShoppingDbHelper) {
             }
             Spacer(modifier = Modifier.height(16.dp))
             ShoppingList(items = items, onDeleteItem = { id ->
-                deleteItem(dbHelper, id)
-                items = getAllItems(dbHelper)
+                dbHelper.deleteItem(dbHelper, id)
+                items = dbHelper.getAllItems(dbHelper)
             }, onUpdateItem = { id, itemName, quantity ->
-                updateItem(dbHelper, id, itemName, quantity)
-                items = getAllItems(dbHelper)
+                dbHelper.updateItem(dbHelper, id, itemName, quantity)
+                items = dbHelper.getAllItems(dbHelper)
             })
         }
     }
@@ -111,8 +104,8 @@ fun ShoppingApp(dbHelper: ShoppingDbHelper) {
 @Composable
 fun ShoppingList(
     items: List<ShoppingItem>,
-    onDeleteItem: (Long) -> Unit,
-    onUpdateItem: (Long, String, Int) -> Unit
+    onDeleteItem: (Int) -> Unit,
+    onUpdateItem: (Int, String, Int) -> Unit
 ) {
     LazyColumn {
         items(items) { item ->
@@ -152,9 +145,10 @@ fun ShoppingList(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "${item.itemName} - ${item.quantity}")
+                    Text(text = "  Id: ${item.id} - Name: ${item.itemName} -  Quantity: ${item.quantity}")
                     Row {
                         IconButton(onClick = { editMode = true }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit")
